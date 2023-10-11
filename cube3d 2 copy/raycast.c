@@ -204,15 +204,15 @@ unsigned int get_color(t_cube *main_game, unsigned int y_texture, unsigned int x
         // Handle error or return a default color
         return 0; // Default color (black or another valid color)
     }
-	//uint8_t *colors = main_game->m_north->pixels + main_game->iter;
-	//uint8_t offset0 = colors[0];
-	// uint8_t offset1 = colors[1];
-	// uint8_t offset2 = colors[2];
-	// uint8_t offset3 = colors[3];
-	// main_game->iter += 4;
+	uint8_t *colors = &main_game->m_north->pixels[(y_texture * main_game->m_north->width) + x_texture];
+	uint8_t offset0 = colors[0];
+	uint8_t offset1 = colors[1];
+	uint8_t offset2 = colors[2];
+	uint8_t offset3 = colors[3];
+	main_game->iter += 4;
 
     // Calculate the offsets for each RGB component
-    unsigned int offset0 = main_game->m_north->pixels[(y_texture * main_game->m_north->width) + x_texture];
+    // unsigned int offset0 = main_game->m_north->pixels[(y_texture * main_game->m_north->width) + x_texture];
 
 	//printf("ana = %d %d %d %d\n", main_game->m_north->pixels[offset0], main_game->m_north->pixels[offset0 + 1], main_game->m_north->pixels[offset0 + 2], main_game->m_north->pixels[offset0 + 3]);
 
@@ -222,8 +222,8 @@ unsigned int get_color(t_cube *main_game, unsigned int y_texture, unsigned int x
 
 
     // Call ft_pixel function with the calculated offsets
-    //return ft_pixel(offset0, offset1, offset2, offset3);
-	return ((y_texture * main_game->m_north->width) + x_texture);
+    return ft_pixel(offset0, offset1, offset2, offset3);
+	// return ((y_texture * main_game->m_north->width) + x_texture);
 }
 
 
@@ -280,16 +280,18 @@ void	cast_ray(t_cube *main_game, double angle, int *i)
 	mlx_image_t *sight = main_game->m_north;
 	int texturs_x;
 	if (main_game->check_vert)
-		texturs_x = (int)((main_game->ray->wall_verty / TILE_SIZE) * sight->width) % sight->width;
+		texturs_x = (int)(main_game->ray->wall_verty * ((float)sight->width / TILE_SIZE)) % sight->width;
 	else 
-		texturs_x = (int)((main_game->ray->wall_horzx * sight->width) / TILE_SIZE) % sight->width;
-	int mm = y + ( wallstrip / 2) - (main_game->y_p / 2); 
+		texturs_x = (int)(main_game->ray->wall_horzx * ((float)sight->width / TILE_SIZE)) % sight->width;
+		// texturs_x = (int)((main_game->ray->wall_horzx * sight->width) / TILE_SIZE) % sight->width;
+	int mm;
 	while(y < wall_bottom)
 	{
+	 	int mm = y + ( wallstrip / 2) - (main_game->y_p / 2); 
         int y_texture = mm * ((double)sight->height / wallstrip);
 
 		unsigned int color = get_color(main_game, y_texture, texturs_x);
-		mlx_put_pixel(main_game->image, *i, y, 0x0300ff);
+		mlx_put_pixel(main_game->image, *i, y, color);
 		y++;
 	}
 	line(main_game, main_game->player->x  * SCALE , main_game->player->y  * SCALE, hitx  * SCALE , hity  * SCALE);
@@ -377,8 +379,8 @@ void	ceiling_floor(t_cube *main_game)
 	x = 0;
 		while(x < main_game->x_p)
 		{
-			unsigned int color = ft_pixel(main_game->cl->cl[0] ,main_game->cl->cl[1],main_game->cl->cl[2],255);
-			mlx_put_pixel(main_game->image, x, y, color);
+			unsigned int color_cl = ft_pixel(main_game->cl->cl[0] ,main_game->cl->cl[1],main_game->cl->cl[2],255);
+			mlx_put_pixel(main_game->image, x, y, color_cl);
 			x++;
 		}
 	y++;
@@ -389,8 +391,10 @@ void	ceiling_floor(t_cube *main_game)
 	x = 0;
 		while(x < main_game->x_p)
 		{
-			unsigned int color = ft_pixel(main_game->cl->fl[0] ,main_game->cl->fl[1],main_game->cl->fl[2],255);
-			mlx_put_pixel(main_game->image, x, y, color);
+			unsigned int color_fl = ft_pixel(main_game->cl->fl[0] ,main_game->cl->fl[1],main_game->cl->fl[2],255);
+			// printf("%s\n", main_game->cl->fl);
+			// printf("%s\n", main_game->cl->fl[1]);
+			mlx_put_pixel(main_game->image, x, y, color_fl);
 			x++;
 		}
 	y++; 
@@ -400,7 +404,7 @@ void	ceiling_floor(t_cube *main_game)
 void	frame(void * main)
 {
 	t_cube* main_game = (t_cube *)main;
-	// ceiling_floor(main_game);
+	ceiling_floor(main_game);
 	player_update(main_game);
 	draw_map(main_game);
 	mlx_image_to_window(main_game->mlx,main_game->image, 0 , 0);

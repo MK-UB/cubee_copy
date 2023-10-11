@@ -30,6 +30,8 @@ typedef struct colors
 {
 	char	*fl;
 	char	*cl;
+	// char 	**fl;
+	// char 	**cl;
 }			t_clr;
 
 
@@ -151,7 +153,7 @@ int 	fullfilled(t_cube *cnt);
 int		line_count(char  **dbl, int *j);
 int		is_white_space(char x);
 void	clr_parse(char *str);
-
+// void    clr_parse(char *str, t_cube *content, int flag);
 void	read_components(t_cube *content);
 void	maper(t_cube	*content, char	*av);
 #endif 
