@@ -201,15 +201,10 @@ unsigned int get_color(t_cube *main_game, unsigned int y_texture, unsigned int x
 	//printf("ana = %d %d %d %d\n", main_game->m_north->pixels[0], main_game->m_north->pixels[1], main_game->m_north->pixels[2], main_game->m_north->pixels[3]);
     // Check for valid inputs and dimensions
     if (main_game == NULL || main_game->m_north == NULL || y_texture >= main_game->m_north->height || x_texture >= main_game->m_north->width) {
-        // Handle error or return a default color
         return 0; // Default color (black or another valid color)
     }
-	uint8_t *colors = &main_game->m_north->pixels[(y_texture * main_game->m_north->width) + x_texture];
-	uint8_t offset0 = colors[0];
-	uint8_t offset1 = colors[1];
-	uint8_t offset2 = colors[2];
-	uint8_t offset3 = colors[3];
-	main_game->iter += 4;
+	uint8_t *colors = &main_game->m_north->pixels[(y_texture * main_game->m_north->width + x_texture) * 4];
+	//uint8_t* pixelstart = &image->pixels[(y * image->width + x) * BPP];
 
     // Calculate the offsets for each RGB component
     // unsigned int offset0 = main_game->m_north->pixels[(y_texture * main_game->m_north->width) + x_texture];
@@ -222,7 +217,12 @@ unsigned int get_color(t_cube *main_game, unsigned int y_texture, unsigned int x
 
 
     // Call ft_pixel function with the calculated offsets
-    return ft_pixel(offset0, offset1, offset2, offset3);
+	//printf("%d %d %d %d\n", colors[0], colors[1], colors[2], colors[4]);
+	//exit(0);
+	//unsigned int a = ft_pixel(colors[1], colors[2], colors[3], colors[0]);
+	//printf("%d\n", a);
+    return ft_pixel(colors[0], colors[1], colors[2], colors[3]);
+	//return (*colors);
 	// return ((y_texture * main_game->m_north->width) + x_texture);
 }
 
@@ -268,6 +268,10 @@ void	cast_ray(t_cube *main_game, double angle, int *i)
 		ray_distance = vert_distance;
 	}
 	perpdistance = ray_distance * cos(angle - main_game->player->r_angle);
+			//printf("lsss %f\n", perpdistance);
+
+	if(perpdistance <= 0)
+		perpdistance = 4;
 	projection = (main_game->x_p / 2) / tan(main_game->ray->FOV_ANGLE / 2);
 	wallstrip = (TILE_SIZE / perpdistance) * projection;
 	wall_top = (main_game->y_p / 2) - (wallstrip / 2); 
@@ -284,12 +288,10 @@ void	cast_ray(t_cube *main_game, double angle, int *i)
 	else 
 		texturs_x = (int)(main_game->ray->wall_horzx * ((float)sight->width / TILE_SIZE)) % sight->width;
 		// texturs_x = (int)((main_game->ray->wall_horzx * sight->width) / TILE_SIZE) % sight->width;
-	int mm;
 	while(y < wall_bottom)
 	{
 	 	int mm = y + ( wallstrip / 2) - (main_game->y_p / 2); 
         int y_texture = mm * ((double)sight->height / wallstrip);
-
 		unsigned int color = get_color(main_game, y_texture, texturs_x);
 		mlx_put_pixel(main_game->image, *i, y, color);
 		y++;
@@ -368,30 +370,43 @@ void	draw_map(t_cube *main_game)
 
 	} 
 }
-void	ceiling_floor(t_cube *main_game)
+
+int ceiling_color(t_cube *main_game, int upper_half)
 {
-	int up_half;
-	int x = 0;
-	int y = 0;
-	up_half = main_game->y_p / 2;
-	while(y < up_half)
+	int x;
+	int y;
+	char	**splt;
+
+	splt = ft_split(main_game->cl->cl, ',');
+	y = 0;
+	while(y < upper_half)
 	{
-	x = 0;
+		x = 0;
 		while(x < main_game->x_p)
 		{
-			unsigned int color_cl = ft_pixel(main_game->cl->cl[0] ,main_game->cl->cl[1],main_game->cl->cl[2],255);
+			unsigned int color_cl = ft_pixel(ft_atoi(splt[0]) , ft_atoi(splt[1]), ft_atoi(splt[2]), 255);
 			mlx_put_pixel(main_game->image, x, y, color_cl);
 			x++;
 		}
 	y++;
 	}
-	y = up_half;
+	return(y);
+}
+
+void	floor_color(t_cube *main_game, int lower_half)
+{
+	int y;
+	int x;
+	char **splt;
+
+	splt = ft_split(main_game->cl->fl, ',');
+	y = lower_half;
 	while(y < main_game->y_p)
 	{
 	x = 0;
 		while(x < main_game->x_p)
 		{
-			unsigned int color_fl = ft_pixel(main_game->cl->fl[0] ,main_game->cl->fl[1],main_game->cl->fl[2],255);
+			unsigned int color_fl = ft_pixel(ft_atoi(splt[0]), ft_atoi(splt[1]), ft_atoi(splt[2]), 255);
 			// printf("%s\n", main_game->cl->fl);
 			// printf("%s\n", main_game->cl->fl[1]);
 			mlx_put_pixel(main_game->image, x, y, color_fl);
@@ -399,6 +414,21 @@ void	ceiling_floor(t_cube *main_game)
 		}
 	y++; 
 	}
+}
+
+void	ceiling_floor(t_cube *main_game)
+{
+	// floor_color(main_game);
+	int upper_half;
+	int lower_half;
+	// char	**splt_cl;
+	// char	**splt_fl;
+
+	// splt_cl = ft_split(main_game->cl->cl, ',');
+	upper_half = main_game->y_p / 2;
+	lower_half = ceiling_color(main_game, upper_half);
+	// y = upper_half;
+	floor_color(main_game, lower_half);
 }
 
 void	frame(void * main)
@@ -492,6 +522,7 @@ void	cub(t_cube *main_game)
 	player_init(main_game);
 	main_game->mlx = mlx_init(main_game->x_p ,main_game->y_p , "cube", FALSE);
 	main_game->image = mlx_new_image(main_game->mlx,main_game->x_p , main_game->y_p);
+	mlx_put_pixel(main_game->image, 0, 0, ft_pixel(255, 172, 28, 255));
 	ft_upload_texture_img(main_game);
 	frame(main_game);	
 	mlx_loop_hook(main_game->mlx, dd_callback, main_game);
